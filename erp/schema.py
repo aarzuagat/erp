@@ -20,12 +20,20 @@ class CompanyNode(DjangoObjectType):
 
 class Query(object):
     companies = graphene.List(CompanyNode)
+    configurations = graphene.List(CompanyConfigurationNode)
 
     def resolve_companies(self, info, **kwargs):
         query = models.Company.objects.all()
         filter = info.context.GET.get('filter', '')
         if filter is not None:
             query = query.filter(fiscalName__icontains=filter)
+        return paginate(info, query)
+
+    def resolve_configurations(self, info, **kwargs):
+        query = models.CompanyConfiguration.objects.all()
+        filter = info.context.GET.get('filter', '')
+        if filter is not None:
+            query = query.filter(shortName__icontains=filter)
         return paginate(info, query)
 
 
@@ -45,6 +53,12 @@ class CompanyMutation(DjangoModelFormMutation):
     class Meta:
         form_class = forms.CompanyForm
 
+class CompanyConfigurationMutation(DjangoModelFormMutation):
+    company = graphene.Field(CompanyConfigurationNode)
+
+    class Meta:
+        form_class = forms.CompanyConfigurationForm
+
 class DeleteCompanyMutation(graphene.Mutation):
     ok = graphene.Boolean()
 
@@ -57,6 +71,45 @@ class DeleteCompanyMutation(graphene.Mutation):
         obj.delete()
         return cls(ok=True)
 
+class DeleteCompaniesListMutation(graphene.Mutation):
+    ok = graphene.Boolean()
+
+    class Arguments:
+        id = graphene.List(graphene.Int)
+
+    @classmethod
+    def mutate(cls, root, info, **kwargs):
+        obj = models.Company.objects.filter(id__in=kwargs["id"])
+        obj.delete()
+        return cls(ok=True)
+
+class ActivateCompaniesListMutation(graphene.Mutation):
+    ok = graphene.Boolean()
+
+    class Arguments:
+        id = graphene.List(graphene.Int)
+
+    @classmethod
+    def mutate(cls, root, info, **kwargs):
+        obj = models.Company.objects.filter(id__in=kwargs["id"]).update(isActive=True)
+        return cls(ok=True)
+
+class DesactivateCompaniesListMutation(graphene.Mutation):
+    ok = graphene.Boolean()
+
+    class Arguments:
+        id = graphene.List(graphene.Int)
+
+    @classmethod
+    def mutate(cls, root, info, **kwargs):
+        obj = models.Company.objects.filter(id__in=kwargs["id"]).update(isActive=False)
+        return cls(ok=True)
+
+
 class Mutation(graphene.ObjectType):
     add_company = CompanyMutation.Field()
+    add_company_configuration = CompanyConfigurationMutation.Field()
     delete_company = DeleteCompanyMutation.Field()
+    delete_companies = DeleteCompaniesListMutation.Field()
+    activate_companies = ActivateCompaniesListMutation.Field()
+    desactivate_companies = DesactivateCompaniesListMutation.Field()

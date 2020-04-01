@@ -10,7 +10,7 @@ class Company(models.Model):
     mobile = models.CharField(max_length=20)
     address = models.TextField()
     postalCode = models.CharField(max_length=20)
-    configuration = models.OneToOneField("CompanyConfiguration", on_delete=models.CASCADE, null=True, blank=True)
+    isActive = models.BooleanField(default=True)
 
     class Meta:
         ordering = ['fiscalName']
@@ -23,6 +23,7 @@ class CompanyConfiguration(models.Model):
     primaryColor = models.CharField(max_length=20)
     secondaryColor = models.CharField(max_length=20, null=True, blank=True)
     logo = models.ImageField(upload_to='companies/%Y/%m', null=True, blank=True)
+    company = models.OneToOneField("Company", on_delete=models.CASCADE)
 
     class Meta:
         ordering = ['shortName']
