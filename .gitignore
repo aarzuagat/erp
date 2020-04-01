@@ -1,3 +1,8 @@
 # Created by .ignore support plugin (hsz.mobi)
 /venv/
 /frontend/node_modules/
+.idea/
+erp/migrations/__pycache__/
+erp_crm/__pycache__/
+erp/__pycache__/
+corsheaders/__pycache__/

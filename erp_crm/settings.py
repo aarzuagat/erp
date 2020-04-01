@@ -25,7 +25,7 @@ SECRET_KEY = '5j6g5g3qkxs@l+5cdvqm_2k+1@5j$=6s-y0(k6nx+$dfg4$g1)'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -43,15 +43,16 @@ INSTALLED_APPS = [
 GRAPHENE = {'SCHEMA': 'erp_crm.schema.schema'}
 
 MIDDLEWARE = [
-'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
 
 ROOT_URLCONF = 'erp_crm.urls'
 
@@ -126,10 +127,15 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
-CORS_ORIGIN_WHITELIST = (
-    'http://127.0.0.1:8080', #Este es el dominio de donde se le permitirá hacer peticiones
-)
-APPEND_SLASH=False
+
 
 MEDIA_URL = '/media/'
-# MEDIA_ROOT = os.path.join(BASE_DIR, 'principal/artistas/')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+STATICFILES_DIRS = [os.path.join(BASE_DIR,'static')]
+
+# CORS_ORIGIN_ALLOW_ALL = True
+
+CORS_ORIGIN_WHITELIST = [
+    'http://127.0.0.1:8080', #Este es el dominio de donde se le permitirá hacer peticiones
+]
+# APPEND_SLASH=False

@@ -1,10 +1,10 @@
 import graphene
 from graphene_django import DjangoObjectType
-from . import models
+from . import models, forms
 from graphene_django.filter import DjangoFilterConnectionField
 from graphene import Field
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-
+from graphene_django.forms.mutation import DjangoModelFormMutation
 
 class CompanyConfigurationNode(DjangoObjectType):
     class Meta:
@@ -37,3 +37,26 @@ def paginate(info, query):
         return []
     results = paginator.get_page(page)
     return results
+
+
+class CompanyMutation(DjangoModelFormMutation):
+    company = graphene.Field(CompanyNode)
+
+    class Meta:
+        form_class = forms.CompanyForm
+
+class DeleteCompanyMutation(graphene.Mutation):
+    ok = graphene.Boolean()
+
+    class Arguments:
+        id = graphene.ID()
+
+    @classmethod
+    def mutate(cls, root, info, **kwargs):
+        obj = models.Company.objects.get(id=kwargs["id"])
+        obj.delete()
+        return cls(ok=True)
+
+class Mutation(graphene.ObjectType):
+    add_company = CompanyMutation.Field()
+    delete_company = DeleteCompanyMutation.Field()
