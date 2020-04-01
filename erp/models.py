@@ -10,6 +10,8 @@ class Company(models.Model):
     mobile = models.CharField(max_length=20)
     address = models.TextField()
     postalCode = models.CharField(max_length=20)
+    configuration = models.OneToOneField("CompanyConfiguration", on_delete=models.CASCADE, null=True)
+
     
     def __str__(self):
         return self.fiscalName
@@ -19,7 +21,6 @@ class CompanyConfiguration(models.Model):
     primaryColor = models.CharField(max_length=20)
     secondaryColor = models.CharField(max_length=20, null=True)
     logo = models.ImageField(upload_to='companies/%Y/%m', null=True)
-    company = models.OneToOneField(Company, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.shortName
