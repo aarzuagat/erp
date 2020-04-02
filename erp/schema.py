@@ -71,6 +71,10 @@ class DeleteCompanyMutation(graphene.Mutation):
         obj.delete()
         return cls(ok=True)
 
+
+
+
+
 class DeleteCompaniesListMutation(graphene.Mutation):
     ok = graphene.Boolean()
 
@@ -82,6 +86,11 @@ class DeleteCompaniesListMutation(graphene.Mutation):
         obj = models.Company.objects.filter(id__in=kwargs["id"])
         obj.delete()
         return cls(ok=True)
+
+
+
+
+        
 
 class ActivateCompaniesListMutation(graphene.Mutation):
     ok = graphene.Boolean()
