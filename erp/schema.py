@@ -12,8 +12,12 @@ from graphene_file_upload.scalars import Upload
 
 
 class CompanyConfigurationNode(DjangoObjectType):
+    logo = graphene.String()
     class Meta:
         model = models.CompanyConfiguration
+
+    def resolve_logo(self, info, **kwargs):
+        return self.logoUrl
 
 
 
@@ -69,17 +73,22 @@ class CompanyMutation(DjangoModelFormMutation):
 
 class CreateCompanyConfig(graphene.Mutation):
     class Arguments:
+        id = graphene.ID()
         shortName = graphene.String()
         primaryColor = graphene.String()
         secondaryColor = graphene.String()
-        company = graphene.ID()
-    # ok = graphene.Boolean()
+        company = graphene.String()
     companyConfig = graphene.Field(lambda: CompanyConfigurationNode)
 
     def mutate(root, info, **kwargs):
         instance = get_object_or_404(models.Company, id=int(kwargs.get('company')))
         kwargs['company'] = instance
-        comcon = models.CompanyConfiguration.objects.create(**kwargs)
+        if kwargs['id'] == '':
+            del kwargs['id']
+            comcon = models.CompanyConfiguration.objects.create(**kwargs)[0]
+        else:
+            comcon = models.CompanyConfiguration.objects.filter(id=kwargs['id']).update(**kwargs)
+            comcon = models.CompanyConfiguration.objects.get(id=kwargs['id'])
         return CreateCompanyConfig(companyConfig=comcon)
 
 

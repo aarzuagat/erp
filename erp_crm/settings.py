@@ -39,8 +39,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'erp',
     'corsheaders',
-    'rest_framework'
-
 ]
 GRAPHENE = {'SCHEMA': 'erp_crm.schema.schema'}
 
@@ -140,4 +138,4 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR,'static')]
 CORS_ORIGIN_WHITELIST = [
     'http://127.0.0.1:8080', #Este es el dominio de donde se le permitirá hacer peticiones
 ]
-# APPEND_SLASH=False
+SITE_URL = 'http://127.0.0.1:8000'
