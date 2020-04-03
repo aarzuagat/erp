@@ -36,8 +36,8 @@ Utilice para ello la ruta del api. Por ejemplo:
 axios.post('http://127.0.0.1:8000/api/'?nombre=alberto&provincia=1)
 axios.post('http://127.0.0.1:8000/api/'?fiscalName=alberto&companyconfiguration__shortName=ete)
 ```
-**1**Esto devolverá las persona que contengan alberto en su nombre y en la provincia 1.
-**2**Esto devolverá los elementos con fiscalName "alberto" y que en su relacion (1-1) companyconfiguration, el shortName contenga ete
+**1**Esto devolverá las persona que contengan alberto en su nombre y en la provincia 1.  
+**2**Esto devolverá los elementos con fiscalName "alberto" y que en su relacion (1-1) companyconfiguration, el shortName contenga ete  
 **NOTA** Para acceder a los campos de las relaciones, use este formato: **relacion__atributo** (dos guiones bajos _)
 
 
