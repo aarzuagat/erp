@@ -10,7 +10,7 @@ class Company(models.Model):
     mobile = models.CharField(max_length=20)
     address = models.TextField()
     postalCode = models.CharField(max_length=20)
-    isActive = models.BooleanField(default=True)
+    isActive = models.IntegerField(default=1)
 
     class Meta:
         ordering = ['fiscalName']

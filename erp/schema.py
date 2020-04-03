@@ -27,41 +27,37 @@ class CompanyNode(DjangoObjectType):
     class Meta:
         model = models.Company
 class Query(object):
-    company = graphene.Field(CompanyNode, id=graphene.Int())
     companies = graphene.List(CompanyNode)
     configurations = graphene.List(CompanyConfigurationNode)
 
-    def resolve_company(self, info, **kwargs):
-        id = kwargs.get('id')
-
-        if id is not None:
-            return get_object_or_404(models.Company, id=id)
-        return None
-
-
     def resolve_companies(self, info, **kwargs):
         query = models.Company.objects.all()
-        filter = info.context.GET.get('filter', '')
-        if filter is not None:
-            query = query.filter(fiscalName__icontains=filter)
         return paginate(info, query)
 
     def resolve_configurations(self, info, **kwargs):
         query = models.CompanyConfiguration.objects.all()
-        filter = info.context.GET.get('filter', '')
-        if filter is not None:
-            query = query.filter(shortName__icontains=filter)
         return paginate(info, query)
 
 
 def paginate(info, query):
+    filters = info.context.GET
+    newFilters = {}
+    for x,y in filters.items():
+        if x not in ['page', 'limit']:
+            newFilters[f'{x}__icontains'] = y
+    query = query.filter(**newFilters)
     page = int(info.context.GET.get('page', 1))
-    items = int(info.context.GET.get('limit', 20))
-    paginator = Paginator(query, items)
+    items = int(info.context.GET.get('limit',0))
+    if items == 0:
+        return query
+    else:
+        paginator = Paginator(query, items)
     if paginator.num_pages < page or page < 1:
         return []
-    results = paginator.get_page(page)
-    return results
+    try:
+        return paginator.get_page(page)
+    except:
+        return []
 
 
 class CompanyMutation(DjangoModelFormMutation):
@@ -85,7 +81,7 @@ class CreateCompanyConfig(graphene.Mutation):
         kwargs['company'] = instance
         if kwargs['id'] == '':
             del kwargs['id']
-            comcon = models.CompanyConfiguration.objects.create(**kwargs)[0]
+            comcon = models.CompanyConfiguration.objects.get_or_create(**kwargs)[0]
         else:
             comcon = models.CompanyConfiguration.objects.filter(id=kwargs['id']).update(**kwargs)
             comcon = models.CompanyConfiguration.objects.get(id=kwargs['id'])

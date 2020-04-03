@@ -137,5 +137,6 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR,'static')]
 
 CORS_ORIGIN_WHITELIST = [
     'http://127.0.0.1:8080', #Este es el dominio de donde se le permitirá hacer peticiones
+    'http://localhost:8080', #Este es el dominio de donde se le permitirá hacer peticiones
 ]
 SITE_URL = 'http://127.0.0.1:8000'
