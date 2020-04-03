@@ -1,8 +1,0 @@
-
-mutation($input:CompanyMutationInput!) {
-  addCompany(input:$input){
-    company{
-      id
-    }
-  }
-}
