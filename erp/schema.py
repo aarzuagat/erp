@@ -73,15 +73,18 @@ class CreateCompanyConfig(graphene.Mutation):
         primaryColor = graphene.String()
         secondaryColor = graphene.String()
         company = graphene.ID()
-    ok = graphene.Boolean()
+    # ok = graphene.Boolean()
     companyConfig = graphene.Field(lambda: CompanyConfigurationNode)
 
-    def mutate(root, info, shortName,primaryColor,secondaryColor,company):
-        instance = get_object_or_404(models.Company, id=int(company))
-        comcon = models.CompanyConfiguration(shortName=shortName,primaryColor=primaryColor,secondaryColor=secondaryColor,company=instance)
-        comcon.save()
-        ok = True
-        return CreateCompanyConfig(companyConfig=comcon, ok=ok)
+    def mutate(root, info, **kwargs):
+        instance = get_object_or_404(models.Company, id=int(kwargs.get('company')))
+        kwargs['company'] = instance
+        comcon = models.CompanyConfiguration.objects.create(**kwargs)
+        return CreateCompanyConfig(companyConfig=comcon)
+
+
+
+
 
 # class CompanyConfigurationMutation(graphene.ObjectType):
     # configuration = CreateCompanyConfig.Field()
