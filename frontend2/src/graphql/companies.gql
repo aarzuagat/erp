@@ -1,0 +1,20 @@
+
+query items{
+  companies{
+    id
+    fiscalName
+    commercialName
+    nif
+    email
+    website
+    telephone
+    mobile
+    address
+    postalCode
+    isActive
+    companyconfiguration{
+      id
+      shortName
+    }
+  }
+}

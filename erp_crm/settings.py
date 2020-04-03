@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'erp',
     'corsheaders',
+    'rest_framework'
+
 ]
 GRAPHENE = {'SCHEMA': 'erp_crm.schema.schema'}
 

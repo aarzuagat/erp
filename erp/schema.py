@@ -5,10 +5,16 @@ from graphene_django.filter import DjangoFilterConnectionField
 from graphene import Field
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from graphene_django.forms.mutation import DjangoModelFormMutation
+from django.shortcuts import get_object_or_404
+from graphene_file_upload.scalars import Upload
+
+
+
 
 class CompanyConfigurationNode(DjangoObjectType):
     class Meta:
         model = models.CompanyConfiguration
+
 
 
 class CompanyNode(DjangoObjectType):
@@ -16,11 +22,18 @@ class CompanyNode(DjangoObjectType):
 
     class Meta:
         model = models.Company
-
-
 class Query(object):
+    company = graphene.Field(CompanyNode, id=graphene.Int())
     companies = graphene.List(CompanyNode)
     configurations = graphene.List(CompanyConfigurationNode)
+
+    def resolve_company(self, info, **kwargs):
+        id = kwargs.get('id')
+
+        if id is not None:
+            return get_object_or_404(models.Company, id=id)
+        return None
+
 
     def resolve_companies(self, info, **kwargs):
         query = models.Company.objects.all()
@@ -53,11 +66,31 @@ class CompanyMutation(DjangoModelFormMutation):
     class Meta:
         form_class = forms.CompanyForm
 
-class CompanyConfigurationMutation(DjangoModelFormMutation):
-    company = graphene.Field(CompanyConfigurationNode)
 
-    class Meta:
-        form_class = forms.CompanyConfigurationForm
+class CreateCompanyConfig(graphene.Mutation):
+    class Arguments:
+        shortName = graphene.String()
+        primaryColor = graphene.String()
+        secondaryColor = graphene.String()
+        company = graphene.ID()
+    ok = graphene.Boolean()
+    companyConfig = graphene.Field(lambda: CompanyConfigurationNode)
+
+    def mutate(root, info, shortName,primaryColor,secondaryColor,company):
+        instance = get_object_or_404(models.Company, id=int(company))
+        comcon = models.CompanyConfiguration(shortName=shortName,primaryColor=primaryColor,secondaryColor=secondaryColor,company=instance)
+        comcon.save()
+        ok = True
+        return CreateCompanyConfig(companyConfig=comcon, ok=ok)
+
+# class CompanyConfigurationMutation(graphene.ObjectType):
+    # configuration = CreateCompanyConfig.Field()
+
+    # class Meta:
+        # form_class = forms.CompanyConfigurationForm
+
+
+
 
 class DeleteCompanyMutation(graphene.Mutation):
     ok = graphene.Boolean()
@@ -88,10 +121,6 @@ class DeleteCompaniesListMutation(graphene.Mutation):
         return cls(ok=True)
 
 
-
-
-        
-
 class ActivateCompaniesListMutation(graphene.Mutation):
     ok = graphene.Boolean()
 
@@ -114,10 +143,9 @@ class DesactivateCompaniesListMutation(graphene.Mutation):
         obj = models.Company.objects.filter(id__in=kwargs["id"]).update(isActive=False)
         return cls(ok=True)
 
-
 class Mutation(graphene.ObjectType):
     add_company = CompanyMutation.Field()
-    add_company_configuration = CompanyConfigurationMutation.Field()
+    add_configuration = CreateCompanyConfig.Field()
     delete_company = DeleteCompanyMutation.Field()
     delete_companies = DeleteCompaniesListMutation.Field()
     activate_companies = ActivateCompaniesListMutation.Field()

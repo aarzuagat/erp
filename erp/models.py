@@ -28,5 +28,5 @@ class CompanyConfiguration(models.Model):
     class Meta:
         ordering = ['shortName']
 
-    def __str__(self):
-        return self.shortName
+    # def __str__(self):
+    #     return self.c

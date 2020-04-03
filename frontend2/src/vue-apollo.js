@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import VueApollo from 'vue-apollo'
 import { createApolloClient, restartWebsockets } from 'vue-cli-plugin-apollo/graphql-client'
+import {HttpLink} from "apollo-link-http"
 
 // Install the vue plugin
 Vue.use(VueApollo)
@@ -9,7 +10,7 @@ Vue.use(VueApollo)
 const AUTH_TOKEN = 'apollo-token'
 
 // Http endpoint
-const httpEndpoint = process.env.VUE_APP_GRAPHQL_HTTP || 'http://localhost:4000/graphql'
+const httpEndpoint = process.env.VUE_APP_GRAPHQL_HTTP || 'http://localhost:8000/graphql/'
 // Files URL root
 export const filesRoot = process.env.VUE_APP_FILES_ROOT || httpEndpoint.substr(0, httpEndpoint.indexOf('/graphql'))
 
@@ -21,7 +22,7 @@ const defaultOptions = {
   httpEndpoint,
   // You can use `wss` for secure connection (recommended in production)
   // Use `null` to disable subscriptions
-  wsEndpoint: process.env.VUE_APP_GRAPHQL_WS || 'ws://localhost:4000/graphql',
+  // wsEndpoint: process.env.VUE_APP_GRAPHQL_WS || 'ws://localhost:8000/graphql/',
   // LocalStorage token
   tokenName: AUTH_TOKEN,
   // Enable Automatic Query persisting with Apollo Engine
@@ -35,7 +36,17 @@ const defaultOptions = {
   // Override default apollo link
   // note: don't override httpLink here, specify httpLink options in the
   // httpLinkOptions property of defaultOptions.
-  // link: myLink
+  // link: new HttpLink({
+  //   uri:'http://127.0.0.1:8000/graphql/'
+  // }),
+  httpLinkOptions:{
+    HttpLink: new HttpLink({
+      uri:'http://127.0.0.1:8000/graphql/',
+      headers:{'Access-Control-Allow-Origin':'*'}
+    })
+  }
+
+  
 
   // Override default cache
   // cache: myCache
@@ -53,11 +64,11 @@ const defaultOptions = {
 // Call this in the Vue app file
 export function createProvider (options = {}) {
   // Create apollo client
-  const { apolloClient, wsClient } = createApolloClient({
+  const { apolloClient, } = createApolloClient({
     ...defaultOptions,
     ...options,
   })
-  apolloClient.wsClient = wsClient
+  // apolloClient.wsClient = wsClient
 
   // Create vue apollo provider
   const apolloProvider = new VueApollo({
