@@ -6,7 +6,6 @@ from graphene import Field
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from graphene_django.forms.mutation import DjangoModelFormMutation
 from django.shortcuts import get_object_or_404
-from graphene_file_upload.scalars import Upload
 
 
 
