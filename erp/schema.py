@@ -42,15 +42,30 @@ def paginate(info, query):
     filters = info.context.GET
     newFilters = {}
     for x,y in filters.items():
+        y =  filters.getlist(f'{x}')
         if x not in ['page', 'limit']:
-            newFilters[f'{x}__icontains'] = y
+            if len(y) > 1:
+                try:
+                    int(y[0])
+                    int(y[1])
+                except:
+                    newFilters[f'{x}__in'] = y
+                else:
+                    newFilters[f'{x}__range'] = [int(i) for i in y]
+            else:
+                try:
+                    int(y[0])
+                except:
+                    newFilters[f'{x}__icontains'] = y[0]
+                else:
+                    newFilters[f'{x}'] = int(y[0])
     query = query.filter(**newFilters)
-    page = int(info.context.GET.get('page', 1))
     items = int(info.context.GET.get('limit',0))
     if items == 0:
         return query
     else:
         paginator = Paginator(query, items)
+    page = int(info.context.GET.get('page', 1))
     if paginator.num_pages < page or page < 1:
         return []
     try:

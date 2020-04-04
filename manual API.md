@@ -1,5 +1,18 @@
 # Comencemos
 
+## Comandos útiles
+```
+python manage.py [comando]
+```
+Los comandos útile son:
+
+**runserver** correr el servidor  
+**createsuperuser** crear superusuario  
+**migrate** migrar los cambios de la BD
+
+
+
+
 ## Crear consultas (query) en Graphql
 
 Puedes ejecutar la ruta del API y alli tienes a **GraphiQl**, un creador visual de consultas.  
