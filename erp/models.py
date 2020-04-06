@@ -1,5 +1,6 @@
 from django.db import models
 from erp_crm import settings
+from django.contrib.auth.models import User
 class Company(models.Model):
     fiscalName = models.CharField(max_length=100)
     commercialName = models.CharField(max_length=100)
@@ -34,5 +35,20 @@ class CompanyConfiguration(models.Model):
             return settings.SITE_URL+self.logo.url
         return None
 
-    # def __str__(self):
-    #     return self.c
+class Emloyee(models.Model):
+    name = models.CharField(max_length = 50)
+    lastName = models.CharField(max_length = 100)
+    email = models.EmailField()
+    isActive = models.BooleanField(default=True)
+    company = models.ForeignKey("Company", on_delete=models.SET_NULL, null=True)
+    user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True)
+
+    class Meta:
+        ordering = ['lastName', 'name']
+
+    def __str__(self):
+        return f'{self.name} {self.lastName}'
+
+class UserConfig(models.Model):
+    viewMode = models.BooleanField(default=True)
+    user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True)
