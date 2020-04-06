@@ -83,7 +83,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'erp_django',
         'USER': 'root',
-        'PASSWORD': 'root',
+        'PASSWORD': '',
         'HOST': '127.0.0.1',  #Esto no hace falta ahora, para el despliegue. Pero no está de más
         'PORT': '3306', #Esto no hace falta ahora, para el despliegue. Pero no está de más
     }
