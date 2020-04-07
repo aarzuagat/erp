@@ -35,7 +35,7 @@ class CompanyConfiguration(models.Model):
             return settings.SITE_URL+self.logo.url
         return None
 
-class Emloyee(models.Model):
+class Employee(models.Model):
     name = models.CharField(max_length = 50)
     lastName = models.CharField(max_length = 100)
     email = models.EmailField()

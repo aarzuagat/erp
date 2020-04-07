@@ -1,5 +1,6 @@
 from django import forms
 from . import models
+from django.contrib.auth.models import Group, User
 
 class CompanyForm(forms.ModelForm):
     class Meta:
@@ -9,4 +10,14 @@ class CompanyForm(forms.ModelForm):
 class CompanyConfigurationForm(forms.ModelForm):
     class Meta:
         model = models.CompanyConfiguration
+        fields = '__all__'
+
+class RoleForm(forms.ModelForm):
+    class Meta:
+        model = Group
+        fields = '__all__'
+
+class UserForm(forms.ModelForm):
+    class Meta:
+        model = User
         fields = '__all__'

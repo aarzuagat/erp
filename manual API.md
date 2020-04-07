@@ -80,7 +80,7 @@ Por defecto se devuelve el objeto.
 Utilice el mismo método que el guardar, recuerda que NO puede faltar el id del elemento dentro de la consulta. Es la forma que tengo de saber que lo que vas es a actualizar y no guardar. Cuando guardas, el id viene así "" .
 
 ## Eliminar objetos
-Utilice la mutation para ello. Por ejemplo:
+Utilice la mutation para correspondiente. Por ejemplo:
 ```
 mutation{
   deleteCompanies(id:[9,10,11]){
@@ -88,6 +88,20 @@ mutation{
   }
 }
 ```
-Eliminará las compañías que tengan los ids dentro del array.
+Eliminará las compañías que tengan los ids dentro del array y devolverá una variable ok booleana con la confirmación de la acción.
 **ACLARACIÓN:** En estos casos (relaciones 1-1) se aplica borrado en cascada, por lo que las configuraciones asociadas a esos elementos serán eliminadas.  
 Siempre en los eliminar, devolveré un elemento ok binario diciendo si se pudieron eliminar o no.
+
+## Autenticación
+Para solicitar el token, use la mutation tokenAuth como se muestra:  
+```
+mutation{
+  tokenAuth(username:"erp",password:"erp"){
+    token
+  }
+}
+```
+Luego, en las peticiones debe agregar el atributo Authorization del header con este formato:
+```
+Authorization: JWT <token>
+```

@@ -6,8 +6,8 @@ from graphene import Field
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from graphene_django.forms.mutation import DjangoModelFormMutation
 from django.shortcuts import get_object_or_404
-
-
+from django.contrib.auth.models import Permission, User, Group
+from graphql_jwt.decorators import login_required
 
 
 class CompanyConfigurationNode(DjangoObjectType):
@@ -25,16 +25,69 @@ class CompanyNode(DjangoObjectType):
 
     class Meta:
         model = models.Company
+
+class PermissionNode(DjangoObjectType):
+    
+    class Meta:
+        model = Permission
+
+class RoleNode(DjangoObjectType):
+    permissions = graphene.List(PermissionNode)
+    
+    class Meta:
+        model = Group
+
+class UserNode(DjangoObjectType):
+
+    class Meta:
+        model = User
+        exclude = ['username','password']
+
+class Auth(graphene.ObjectType):
+    viewer = graphene.Field(UserNode)
+    
+    def resolve_viewer(self, info, **kwargs):
+        user = info.context.user
+        if not user.is_authenticated:
+            raise Exception('Authentication credentials were not provided')
+        return user
+class EmployeeNode(DjangoObjectType):
+    company = graphene.Field(CompanyNode)
+    user = graphene.Field(UserNode)
+    fullName = graphene.String()
+
+    class Meta:
+        model = models.Employee
+        exclude = ['name', 'lastName']
+
+    def resolve_fullName(self, indo):
+        return f'{self.name} {self.lastName}'
+
 class Query(object):
     companies = graphene.List(CompanyNode)
     configurations = graphene.List(CompanyConfigurationNode)
+    employees = graphene.List(EmployeeNode)
+    users = graphene.List(UserNode)
 
+    @login_required
     def resolve_companies(self, info, **kwargs):
         query = models.Company.objects.all()
         return paginate(info, query)
 
+
+    @login_required
     def resolve_configurations(self, info, **kwargs):
         query = models.CompanyConfiguration.objects.all()
+        return paginate(info, query)
+    
+    @login_required
+    def resolve_users(self, info, **kwargs):
+        query = User.objects.all()
+        return paginate(info, query)
+
+    @login_required
+    def resolve_employees(self, info, **kwargs):
+        query = models.Employee.objects.all()
         return paginate(info, query)
 
 
@@ -66,7 +119,7 @@ def paginate(info, query):
     else:
         paginator = Paginator(query, items)
     page = int(info.context.GET.get('page', 1))
-    if paginator.num_pages < page or page < 1:
+    if paginator.num_pages < page:
         return []
     try:
         return paginator.get_page(page)
@@ -81,7 +134,7 @@ class CompanyMutation(DjangoModelFormMutation):
         form_class = forms.CompanyForm
 
 
-class CreateCompanyConfig(graphene.Mutation):
+class CompanyConfigMutation(graphene.Mutation):
     class Arguments:
         id = graphene.ID()
         shortName = graphene.String()
@@ -90,8 +143,9 @@ class CreateCompanyConfig(graphene.Mutation):
         company = graphene.String()
     companyConfig = graphene.Field(lambda: CompanyConfigurationNode)
 
+    @login_required
     def mutate(root, info, **kwargs):
-        instance = get_object_or_404(models.Company, id=int(kwargs.get('company')))
+        instance = get_object_or_404(models.Company, id=kwargs.get('company'))
         kwargs['company'] = instance
         if kwargs['id'] == '':
             del kwargs['id']
@@ -99,35 +153,7 @@ class CreateCompanyConfig(graphene.Mutation):
         else:
             comcon = models.CompanyConfiguration.objects.filter(id=kwargs['id']).update(**kwargs)
             comcon = models.CompanyConfiguration.objects.get(id=kwargs['id'])
-        return CreateCompanyConfig(companyConfig=comcon)
-
-
-
-
-
-# class CompanyConfigurationMutation(graphene.ObjectType):
-    # configuration = CreateCompanyConfig.Field()
-
-    # class Meta:
-        # form_class = forms.CompanyConfigurationForm
-
-
-
-
-class DeleteCompanyMutation(graphene.Mutation):
-    ok = graphene.Boolean()
-
-    class Arguments:
-        id = graphene.ID()
-
-    @classmethod
-    def mutate(cls, root, info, **kwargs):
-        obj = models.Company.objects.get(id=kwargs["id"])
-        obj.delete()
-        return cls(ok=True)
-
-
-
+        return CompanyConfigMutation(companyConfig=comcon)
 
 
 class DeleteCompaniesListMutation(graphene.Mutation):
@@ -136,6 +162,7 @@ class DeleteCompaniesListMutation(graphene.Mutation):
     class Arguments:
         id = graphene.List(graphene.Int)
 
+    @login_required
     @classmethod
     def mutate(cls, root, info, **kwargs):
         obj = models.Company.objects.filter(id__in=kwargs["id"])
@@ -149,6 +176,7 @@ class ActivateCompaniesListMutation(graphene.Mutation):
     class Arguments:
         id = graphene.List(graphene.Int)
 
+    @login_required
     @classmethod
     def mutate(cls, root, info, **kwargs):
         obj = models.Company.objects.filter(id__in=kwargs["id"]).update(isActive=True)
@@ -160,15 +188,101 @@ class DesactivateCompaniesListMutation(graphene.Mutation):
     class Arguments:
         id = graphene.List(graphene.Int)
 
+    @login_required
     @classmethod
     def mutate(cls, root, info, **kwargs):
         obj = models.Company.objects.filter(id__in=kwargs["id"]).update(isActive=False)
         return cls(ok=True)
 
+class EmployeeMutation(graphene.Mutation):
+    class Arguments:
+        id = graphene.ID()
+        name = graphene.String(required= True) 
+        lastName = graphene.String(required= True)
+        email = graphene.String(required= True)
+        company = graphene.String()
+        user = graphene.String()
+        
+    employeeResponse = graphene.Field(EmployeeNode)
+
+    @login_required
+    def mutate(root, info, **kwargs):
+        company = get_object_or_404(models.Company, id=int(kwargs.get('company')))
+        user = get_object_or_404(User, id=int(kwargs.get('user')))
+        kwargs['company'] = company
+        kwargs['user'] = user
+        if kwargs['id'] == '':
+            del kwargs['id']
+            employee = models.Employee.objects.get_or_create(**kwargs)[0]
+        else:
+            employee = models.Employee.objects.filter(id=kwargs['id']).update(**kwargs)
+            employee = models.Employee.objects.get(id=kwargs['id'])
+        return EmployeeMutation(employeeResponse=employee)
+
+
+
+
+class DesactivateEmployeeListMutation(graphene.Mutation):
+    ok = graphene.Boolean()
+
+    class Arguments:
+        id = graphene.List(graphene.Int)
+
+    @classmethod
+    def mutate(cls, root, info, **kwargs):
+        obj = models.Emloyee.objects.filter(id__in=kwargs["id"]).update(isActive=False)
+        print(f'OBJ es {obj}')
+        return cls(ok=True)
+
+
+class UserPermissionMutation(graphene.Mutation):
+    ok = graphene.Boolean()
+
+    class Arguments:
+        user = graphene.Int(required=True)
+        permissions = graphene.List(graphene.Int, required=True)
+
+    @classmethod
+    def mutate(cls, root, info, **kwargs):
+        user = get_object_or_404(User, id=kwargs['user'])
+        permissions = Permission.objects.filter(id__in=kwargs["permissions"])
+        user.user_permissions.set(permissions)
+        return cls(ok=True)
+
+class UserRoleMutation(graphene.Mutation):
+    ok = graphene.Boolean()
+    description = graphene.String()
+
+    class Arguments:
+        user = graphene.Int(required=True)
+        roles = graphene.List(graphene.Int, required=True)
+
+    @classmethod
+    def mutate(cls, root, info, **kwargs):
+        user = get_object_or_404(User, id=kwargs['user'])
+        roles = Group.objects.filter(id__in=kwargs["roles"])
+        if roles.count() == 0:
+            return cls(ok=False,description='No existen roles')
+        user.groups.set(roles)
+        return cls(ok=True,description='Roles agregados satisfactoriamente')
+
+class RoleMutation(DjangoModelFormMutation):
+
+    class Meta:
+        form_class = forms.RoleForm
+
+class UserMutation(DjangoModelFormMutation):
+    
+    class Meta:
+        form_class = forms.UserForm
+
 class Mutation(graphene.ObjectType):
     add_company = CompanyMutation.Field()
-    add_configuration = CreateCompanyConfig.Field()
-    delete_company = DeleteCompanyMutation.Field()
     delete_companies = DeleteCompaniesListMutation.Field()
     activate_companies = ActivateCompaniesListMutation.Field()
     desactivate_companies = DesactivateCompaniesListMutation.Field()
+    add_configuration = CompanyConfigMutation.Field()
+    add_employee = EmployeeMutation.Field()
+    add_user_permissions = UserPermissionMutation.Field()
+    add_user_groups = UserRoleMutation.Field()
+    add_groups = RoleMutation.Field()
