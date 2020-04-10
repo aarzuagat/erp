@@ -1,6 +1,7 @@
 from django.db import models
 from erp_crm import settings
 from django.contrib.auth.models import User
+from django.utils import timezone
 class Company(models.Model):
     fiscalName = models.CharField(max_length=100)
     commercialName = models.CharField(max_length=100)
@@ -52,3 +53,8 @@ class Employee(models.Model):
 class UserConfig(models.Model):
     viewMode = models.BooleanField(default=True)
     user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True)
+
+class Token(models.Model):
+    token = models.TextField()
+    numberAccess =  models.IntegerField(default=0)
+    lastAccess = models.DateTimeField(default=timezone.now)

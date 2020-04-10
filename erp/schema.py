@@ -7,8 +7,14 @@ from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from graphene_django.forms.mutation import DjangoModelFormMutation
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import Permission, User, Group
-from graphql_jwt.decorators import login_required
-
+from graphql_jwt.decorators import login_required, permission_required
+from graphql_jwt.utils import jwt_decode, jwt_encode
+from django.utils import timezone
+import datetime
+from datetime import timezone as dtz
+from django.http import HttpResponse
+import pytz
+from django.contrib.auth import authenticate
 
 class CompanyConfigurationNode(DjangoObjectType):
     logo = graphene.String()
@@ -22,6 +28,7 @@ class CompanyConfigurationNode(DjangoObjectType):
 
 class CompanyNode(DjangoObjectType):
     configuration = graphene.Field(CompanyConfigurationNode)
+    
 
     class Meta:
         model = models.Company
@@ -43,14 +50,7 @@ class UserNode(DjangoObjectType):
         model = User
         exclude = ['username','password']
 
-class Auth(graphene.ObjectType):
-    viewer = graphene.Field(UserNode)
-    
-    def resolve_viewer(self, info, **kwargs):
-        user = info.context.user
-        if not user.is_authenticated:
-            raise Exception('Authentication credentials were not provided')
-        return user
+
 class EmployeeNode(DjangoObjectType):
     company = graphene.Field(CompanyNode)
     user = graphene.Field(UserNode)
@@ -63,19 +63,100 @@ class EmployeeNode(DjangoObjectType):
     def resolve_fullName(self, indo):
         return f'{self.name} {self.lastName}'
 
+def newToken(user):
+    now = datetime.datetime.now()
+    expDate = now+datetime.timedelta(hours=5)
+    nowUnix = now.replace(tzinfo=pytz.UTC).timestamp()
+    expDateUnix = expDate.replace(tzinfo=pytz.UTC).timestamp()
+    print(nowUnix, expDateUnix)
+    payload = {
+        "username": user,
+        "exp": expDateUnix,
+        "origIat": nowUnix
+    }
+    return jwt_encode(payload)
+
+def getUserByToken(token):
+    try:
+        payload = jwt_decode(token)
+    except:
+        return None
+    username = payload.get('username')
+    try:
+        user = User.objects.get(username=username)
+    except:
+        return None
+    return user
+
+def hasActiveTokens(username):
+    for token in models.Token.objects.all():
+        if getUserByToken(token.token) is not None and getUserByToken(token.token).username == username:
+                return token.token
+    return False
+
+def deleteActiveTokens(username):
+    for token in models.Token.objects.all():
+        if getUserByToken(token.token) is None :
+            token.delete()
+        elif getUserByToken(token.token).username == username:
+                token.delete()
+                return True
+    return False
+
+def updateToken(token):
+    try:
+        acceso= models.Token.objects.get(token=token)
+        payload = jwt_decode(token)
+    except Exception as e:
+        return HttpResponse(e, status=401)
+    hace1h = (timezone.now() - timezone.timedelta(hours=1)).strftime('%Y-%m-%d %H:%M:%S')
+    if str(acceso.lastAccess) < hace1h:
+        acceso.delete()
+        return HttpResponse('Expired token', status=401)
+    if acceso.numberAccess < 31:
+        acceso.numberAccess +=1
+        acceso.save()
+        return True
+    if acceso.numberAccess > 30:
+        acceso.delete()
+        ntoken = newToken(getUserByToken(token).username)
+        nacceso = models.Token.objects.create(token=ntoken)
+        return HttpResponse(f'Token: {ntoken}', status=205)
+    return False
+
+def getToken(request):
+    email= request.POST.get('email')
+    password= request.POST.get('password')
+    print(f'POST: {authenticate(username=email, password=password)}')
+    if authenticate(username=email, password=password) is None:
+        return HttpResponse('Wrong credentials', status=401)
+    if hasActiveTokens(email) is not False:
+        return HttpResponse(f'Token: {hasActiveTokens(email)}', status=205)
+    deleteActiveTokens(email)
+    newPayload = newToken(email)
+    acceso = models.Token.objects.create(**{'token':newPayload})
+    return HttpResponse(f'Token: {newPayload}', status=205)
 class Query(object):
     companies = graphene.List(CompanyNode)
     configurations = graphene.List(CompanyConfigurationNode)
     employees = graphene.List(EmployeeNode)
     users = graphene.List(UserNode)
+    refreshedToken = graphene.String()
 
-    @login_required
-    def resolve_companies(self, info, **kwargs):
+    def resolve_refreshedToken(self, info, **kwargs):
+        user = info.context.META.get('REMOTE_USER')
+        if user is None:
+            return None
+        if hasActiveTokens(user):
+            return None
+        else:
+            return newToken(user)
+
+    def resolve_companies(self, info,**kwargs):
         query = models.Company.objects.all()
         return paginate(info, query)
 
 
-    @login_required
     def resolve_configurations(self, info, **kwargs):
         query = models.CompanyConfiguration.objects.all()
         return paginate(info, query)
@@ -271,10 +352,31 @@ class RoleMutation(DjangoModelFormMutation):
     class Meta:
         form_class = forms.RoleForm
 
-class UserMutation(DjangoModelFormMutation):
+class UserMutation(graphene.Mutation):
+    user = graphene.Field(UserNode)
+
+    class Arguments:
+        id = graphene.String()
+        email = graphene.String(required=True)
+        password = graphene.String(required=True)
+        is_active = graphene.Int()
     
-    class Meta:
-        form_class = forms.UserForm
+    @permission_required('auth.add_user')
+    def mutate(root, info, **kwargs):
+        password = kwargs['password']
+        del kwargs['password']
+        if kwargs['id'] == '':
+            del kwargs['id']
+            user = User(**kwargs)
+            user.username = kwargs['email']
+            user.set_password(password)
+            user.save()
+        else:
+            user = User.objects.filter(id=kwargs['id']).update(**kwargs)
+            user = User.objects.get(id=kwargs['id'])
+            user.set_password(password)
+            user.save()
+        return UserMutation(user=user)
 
 class Mutation(graphene.ObjectType):
     add_company = CompanyMutation.Field()
@@ -286,3 +388,4 @@ class Mutation(graphene.ObjectType):
     add_user_permissions = UserPermissionMutation.Field()
     add_user_groups = UserRoleMutation.Field()
     add_groups = RoleMutation.Field()
+    add_user = UserMutation.Field()

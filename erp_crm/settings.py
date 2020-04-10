@@ -40,7 +40,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'erp',
     'corsheaders',
-    'graphql_jwt.refresh_token.apps.RefreshTokenConfig',
 ]
 GRAPHENE = {
     'SCHEMA': 'erp_crm.schema.schema',
@@ -55,9 +54,8 @@ AUTHENTICATION_BACKENDS = [
 ]
 GRAPHQL_JWT = {
     'JWT_VERIFY_EXPIRATION': True,
-    'JWT_LONG_RUNNING_REFRESH_TOKEN': True,
-    'JWT_EXPIRATION_DELTA': timedelta(minutes=5),
-    'JWT_REFRESH_EXPIRATION_DELTA': timedelta(hours=8),
+    # 'JWT_EXPIRATION_DELTA': timedelta(minutes=120),
+    # 'JWT_REFRESH_EXPIRATION_DELTA': timedelta(days=7),
 }
 
 MIDDLEWARE = [
@@ -68,6 +66,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'erp_crm.myMiddleware.TokenMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
@@ -132,7 +131,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'es'
 
-TIME_ZONE = 'UTC'  #Hay que configurar esto para España
+TIME_ZONE = 'America/Havana'  #Hay que configurar esto para España
 
 USE_I18N = True
 

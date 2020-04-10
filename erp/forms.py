@@ -17,7 +17,3 @@ class RoleForm(forms.ModelForm):
         model = Group
         fields = '__all__'
 
-class UserForm(forms.ModelForm):
-    class Meta:
-        model = User
-        fields = '__all__'
