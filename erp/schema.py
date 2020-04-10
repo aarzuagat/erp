@@ -141,8 +141,13 @@ def deleteToken(request):
     token= request.META.get('HTTP_AUTHORIZATION')
     if token is None:
         return HttpResponse(f'Given token was not correct', status=401)
-    models.Token.objects.filter(token=token).delete()
+    findToken = models.Token.objects.filter(token=token)
+    if findToken.exists():
+        findToken.delete()
+    else:
+        return HttpResponse(f'Given token was not correct', status=401)
     return HttpResponse(f'Token deleted', status=200)
+
 class Query(object):
     companies = graphene.List(CompanyNode)
     configurations = graphene.List(CompanyConfigurationNode)

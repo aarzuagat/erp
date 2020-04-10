@@ -93,15 +93,22 @@ Eliminará las compañías que tengan los ids dentro del array y devolverá una 
 Siempre en los eliminar, devolveré un elemento ok binario diciendo si se pudieron eliminar o no.
 
 ## Autenticación
-Para solicitar el token, use la mutation tokenAuth como se muestra:  
+**PASO 1**: Para solicitar el token, use la ruta /login/ y envíe los siguientes datos por POST (email, password). De vuelta, tendrá un token válido por 1h.  
+**PASO 2**: Para hacer peticiones al API, debe utilizar el header Authorization y pasarle en TOKEN como se muestra
 ```
-mutation{
-  tokenAuth(username:"erp",password:"erp"){
-    token
-  }
-}
+Authorization: <token>
 ```
-Luego, en las peticiones debe agregar el atributo Authorization del header con este formato:
+Si la última petición fue hecha hace más de 1h, recibirá un error 401, por lo que debe volver al **PASO 1**  
+El token tiene, por lo tanto, 1h de vida o 30 peticiones. Si supera las 30 peticiones, el token se invalidará y recibirá una respuesta 205 con un nuevo token. Tenga en cuenta que siempre se devolverá un token en el formato y código 205:
 ```
-Authorization: JWT <token>
+TOKEN <new Token>
 ```
+**PASO 3**: Para eliminar un token manualmente, utilice la ruta:
+```
+/delete-token/
+```
+y envíe por post el campo **token** con el valor. Automáticamente será eliminado y por ende volver al **PASO 1**
+
+
+
+
