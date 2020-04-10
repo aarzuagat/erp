@@ -28,6 +28,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', csrf_exempt(GraphQLView.as_view(graphiql=True))),
     path('login/', csrf_exempt(schema.getToken)),
+    path('delete-token/', csrf_exempt(schema.deleteToken)),
     path('company-configuration', csrf_exempt(views.test)),
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -8,7 +8,7 @@ class TokenMiddleware:
 
     def __call__(self, request):
         response = self.get_response(request)
-        if request.path not in ['/login/']:
+        if request.path not in ['/login/','/delete-token/']:
             token = request.META.get('HTTP_AUTHORIZATION')
             if token is None:
                 return HttpResponse('You must provide a new Token', status=401)
